@@ -5,7 +5,8 @@ import java.util.*;
 public class ThreePrisonersDilemma {
     static boolean VERBOSE = false;
     static int TOURNAMENT_ROUNDS = 300;
-    static int NUM_OF_PLAYERS = 11;
+    static int NUM_OF_PLAYERS = 7;
+    static final boolean PRINT_TOP_3 = false;
 
 	/*
 	 This Java program models the two-player Prisoner's Dilemma game.
@@ -304,8 +305,40 @@ public class ThreePrisonersDilemma {
         }
     }
 
+    /* From https://github.com/Javelin1991/CZ4046_Intelligent_Agents/blob/master/CZ4046_Assignment_2/ThreePrisonersDilemma.java*/
+    class EncourageCoop1 extends Player {
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+
+            // Rule 1: our agent will cooperate in the first round
+            if (n == 0)  {
+                return 0;
+            }
+
+            // Rule 2: our agent will defect in the last few rounds, NastyPlayer mode is turned on
+            if (n > 95) {
+                return 1;
+            }
+
+            // Rule 3: if all players including our agent cooperated in the previous round,
+            // then our agent will continue to cooperate
+            if (myHistory[n-1] == 0 && oppHistory1[n-1] == 0 && oppHistory2[n-1] == 0) {
+                return 0;
+            }
+
+            // Rule 4: check opponents history to see if they have defected before
+            for (int i = 0; i < n; i++) {
+                if (oppHistory1[i] == 1 || oppHistory2[i] == 1) {
+                    // if either one of them defected before, our agent will always defect
+                    return 1;
+                }
+            }
+            // Rule 5: Otherwise, by default nature, our agent will always cooperate
+            return 0;
+        }
+    }
+
     /* From https://github.com/wayneczw/cz4046/blob/master/assignment2/Main/ThreePrisonersDilemma.java */
-    class EncourageCoop extends Player {
+    class EncourageCoop2 extends Player {
         int myScore = 0;
         int opp1Score = 0;
         int opp2Score = 0;
@@ -405,16 +438,20 @@ public class ThreePrisonersDilemma {
     Player makePlayer(int which) {
         switch (which) {
             case 0: return new WILSON_TENG_Player();
-            case 1: return new NicePlayer();
-            case 2: return new NastyPlayer();
-            case 3: return new RandomPlayer();
-            case 4: return new TolerantPlayer();
-            case 5: return new FreakyPlayer();
-            case 6: return new T4TPlayer();
-            case 7: return new SoreLoser();
-            case 8: return new Nasty2();
-            case 9: return new Nice2();
-            case 10: return new EncourageCoop();
+            case 1: return new T4TPlayer();
+            case 2: return new TolerantPlayer();
+            case 3: return new Nasty2();
+            case 4: return new Nice2();
+            case 5: return new EncourageCoop1();
+            case 6: return new SoreLoser();
+            case 7: return new EncourageCoop2();
+            case 8:
+            case 9:
+//            case 1: return new NicePlayer();
+//            case 1: return new NastyPlayer();
+//            case 1: return new FreakyPlayer();
+//            case 1: return new RandomPlayer();
+
         }
         throw new RuntimeException("Bad argument passed to makePlayer");
     }
@@ -433,7 +470,7 @@ public class ThreePrisonersDilemma {
 
         for (int i=0; i<tournament_rounds; i++) {
             int[] top_players = instance.runTournament();
-            for (int tp=0; tp<3; tp++) {
+            if (PRINT_TOP_3) for (int tp=0; tp<3; tp++) {
                 System.out.println(top_players[tp]);
             }
             for (int p=0; p<top_players.length; p++) {
