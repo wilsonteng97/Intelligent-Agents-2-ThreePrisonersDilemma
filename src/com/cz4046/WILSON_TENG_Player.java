@@ -11,7 +11,7 @@ class WILSON_TENG_Player extends Player {
             return 1;  //defects half the time
     }
 
-    // [FIXME!] REMOVE THIS METHOD BEFORE SUBMISSION.
+    // FIXME! >>> REMOVE THIS METHOD BEFORE SUBMISSION.
     @Override
     String name() {
         String result = this.name;
