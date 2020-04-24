@@ -747,10 +747,12 @@ public class ThreePrisonersDilemma {
             case 10: return new ExpectedUtilityPlayer();
             case 11: return new HybridPlayer();
             case 12: return new DonaldDuck();
-//            case 1: return new NicePlayer();
+//            case 0: return new NicePlayer();
 //            case 1: return new NastyPlayer();
-//            case 1: return new FreakyPlayer();
-//            case 1: return new RandomPlayer();
+//            case 2: return new FreakyPlayer();
+//            case 3: return new RandomPlayer();
+//            case 4: return new TolerantPlayer();
+//            case 5: return new T4TPlayer();
 
         }
         throw new RuntimeException("Bad argument passed to makePlayer");
