@@ -128,12 +128,31 @@ public class ThreePrisonersDilemma_Template {
         }
     }
 
+    class WinStayLoseShift extends Player {
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            if (n==0) return 0;
+
+            int r = n - 1;
+            int myLA = myHistory[r];
+            int oppLA1 = oppHistory1[r];
+            int oppLA2 = oppHistory2[r];
+
+            if (payoff[myLA][oppLA1][oppLA2]>=5) return myLA;
+            return oppAction(myLA);
+        }
+
+        private int oppAction(int action) {
+            if (action==1) return 0;
+            return 1;
+        }
+    }
+
 
     /* In our tournament, each pair of strategies will play one match against each other.
      This procedure simulates a single match and returns the scores. */
-    float[] scoresOfMatch(Player A, Player B, Player C, int rounds) {
+    double[] scoresOfMatch(Player A, Player B, Player C, int rounds) {
         int[] HistoryA = new int[0], HistoryB = new int[0], HistoryC = new int[0];
-        float ScoreA = 0, ScoreB = 0, ScoreC = 0;
+        double ScoreA = 0, ScoreB = 0, ScoreC = 0;
 
         for (int i=0; i<rounds; i++) {
             int PlayA = A.selectAction(i, HistoryA, HistoryB, HistoryC);
@@ -146,7 +165,7 @@ public class ThreePrisonersDilemma_Template {
             HistoryB = extendIntArray(HistoryB, PlayB);
             HistoryC = extendIntArray(HistoryC, PlayC);
         }
-        float[] result = {ScoreA/rounds, ScoreB/rounds, ScoreC/rounds};
+        double[] result = {ScoreA/rounds, ScoreB/rounds, ScoreC/rounds};
         return result;
     }
 
@@ -164,7 +183,7 @@ public class ThreePrisonersDilemma_Template {
 	 (strategies) in between matches. When you add your own strategy,
 	 you will need to add a new entry to makePlayer, and change numPlayers.*/
 
-    int numPlayers = 6;
+    int numPlayers = 7;
     Player makePlayer(int which) {
         switch (which) {
             case 0: return new NicePlayer();
@@ -173,6 +192,7 @@ public class ThreePrisonersDilemma_Template {
             case 3: return new TolerantPlayer();
             case 4: return new FreakyPlayer();
             case 5: return new T4TPlayer();
+            case 6: return new WinStayLoseShift();
         }
         throw new RuntimeException("Bad argument passed to makePlayer");
     }
@@ -180,14 +200,14 @@ public class ThreePrisonersDilemma_Template {
     /* Finally, the remaining code actually runs the tournament. */
 
     public static void main (String[] args) {
-        ThreePrisonersDilemma instance = new ThreePrisonersDilemma();
+        ThreePrisonersDilemma_Template instance = new ThreePrisonersDilemma_Template();
         instance.runTournament();
     }
 
     boolean verbose = true; // set verbose = false if you get too much text output
 
     void runTournament() {
-        float[] totalScore = new float[numPlayers];
+        double[] totalScore = new double[numPlayers];
 
         // This loop plays each triple of players against each other.
         // Note that we include duplicates: two copies of your strategy will play once
@@ -199,7 +219,7 @@ public class ThreePrisonersDilemma_Template {
             Player B = makePlayer(j);
             Player C = makePlayer(k);
             int rounds = 90 + (int)Math.rint(20 * Math.random()); // Between 90 and 110 rounds
-            float[] matchResults = scoresOfMatch(A, B, C, rounds); // Run match
+            double[] matchResults = scoresOfMatch(A, B, C, rounds); // Run match
             totalScore[i] = totalScore[i] + matchResults[0];
             totalScore[j] = totalScore[j] + matchResults[1];
             totalScore[k] = totalScore[k] + matchResults[2];
