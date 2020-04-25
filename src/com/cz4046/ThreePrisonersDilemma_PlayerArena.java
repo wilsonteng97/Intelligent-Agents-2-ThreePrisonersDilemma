@@ -1,9 +1,11 @@
 package com.cz4046;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
-public class ThreePrisonersDilemma {
-
+public class ThreePrisonersDilemma_PlayerArena {
 	/*
 	 This Java program models the two-player Prisoner's Dilemma game.
 	 We use the integer "0" to represent cooperation, and "1" to represent
@@ -19,10 +21,10 @@ public class ThreePrisonersDilemma {
 	 The payoffs for player 1 are given by the following matrix: */
 
     static int[][][] payoff = {
-            {{6,3},     //payoffs when first and second players cooperate
-            {3,0}},     //payoffs when first player coops, second defects
-            {{8,5},     //payoffs when first player defects, second coops
-            {5,2}}};    //payoffs when first and second players defect
+            {{6,3},  //payoffs when first and second players cooperate
+                    {3,0}},  //payoffs when first player coops, second defects
+            {{8,5},  //payoffs when first player defects, second coops
+                    {5,2}}}; //payoffs when first and second players defect
 
 	/*
 	 So payoff[i][j][k] represents the payoff to player 1 when the first
@@ -35,11 +37,23 @@ public class ThreePrisonersDilemma {
 	 strategy is given a list of the previous plays (so you can remember what your
 	 opponent did) and must compute the next action.  */
 
-//    class Wilson_Thurman_Teng_Player extends Player {
-//
-//    }
 
-    /* Here are four simple strategies: */
+    abstract class Player {
+        // This procedure takes in the number of rounds elapsed so far (n), and
+        // the previous plays in the match, and returns the appropriate action.
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            throw new RuntimeException("You need to override the selectAction method.");
+        }
+
+        // Used to extract the name of this player class.
+        final String name() {
+            String result = getClass().getName();
+            return result.substring(result.indexOf('$')+1);
+        }
+    }
+
+    /* Here simple strategies: */
+
     class NicePlayer extends Player {
         //NicePlayer always cooperates
         int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
@@ -106,25 +120,6 @@ public class ThreePrisonersDilemma {
         }
     }
 
-    class WinStayLoseShift extends Player {
-        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            if (n==0) return 0;
-
-            int r = n - 1;
-            int myLA = myHistory[r];
-            int oppLA1 = oppHistory1[r];
-            int oppLA2 = oppHistory2[r];
-
-            if (payoff[myLA][oppLA1][oppLA2]>=5) return myLA;
-            return oppAction(myLA);
-        }
-
-        private int oppAction(int action) {
-            if (action==1) return 0;
-            return 1;
-        }
-    }
-
     class RandomT4TPlayer extends Player {
         //Picks a random opponent at each play,
         //and uses the 'tit-for-tat' strategy against them
@@ -158,6 +153,25 @@ public class ThreePrisonersDilemma {
                 return 0;
             else
                 return 1;
+        }
+    }
+
+    class WinStayLoseShift extends Player {
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            if (n==0) return 0;
+
+            int r = n - 1;
+            int myLA = myHistory[r];
+            int oppLA1 = oppHistory1[r];
+            int oppLA2 = oppHistory2[r];
+
+            if (payoff[myLA][oppLA1][oppLA2]>=5) return myLA;
+            return oppAction(myLA);
+        }
+
+        private int oppAction(int action) {
+            if (action==1) return 0;
+            return 1;
         }
     }
 
@@ -448,308 +462,111 @@ public class ThreePrisonersDilemma {
         }
     }
 
-    /* From https://github.com/ShreyasMundhra/CZ4046-Assignment2/blob/master/src/Main/Mundhra_Shreyas_Sudhir_Player.java*/
-    public class Mundhra_Shreyas_Sudhir_Player extends Player {
-        private int opp1Defects = 0;
-        private int opp2Defects = 0;
+    class WILSON_TENG_Player extends Player {
+
+        int[][][] payoff = {
+                {{6, 3},     //payoffs when first and second players cooperate
+                        {3, 0}},     //payoffs when first player coops, second defects
+                {{8, 5},     //payoffs when first player defects, second coops
+                        {5, 2}}};    //payoffs when first and second players defect
+
+        int r;
+        int prev_round = 0;
+        int this_round;
+        int[] myHist, opp1Hist, opp2Hist;
+        int myLA, opp1LA, opp2LA;
+        int myLLA, opp1LLA, opp2LLA;
+
+        int myScore=0, opp1Score=0, opp2Score=0;
+        int opponent1Coop = 0; int opponent2Coop = 0;
 
         int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            // cooperate if this is the first round
-            if (n == 0)
-                return 0;
+            if (n==0) return 0;
 
-            else {
-                // find how many times each opponent has defected in the past
-                opp1Defects += oppHistory1[n - 1];
-                opp2Defects += oppHistory2[n - 1];
+            this.this_round = n;
+            this.prev_round = n - 1;
+            this.myHist = myHistory;
+            this.opp1Hist = oppHistory1;
+            this.opp2Hist = oppHistory2;
 
-                // cooperate if both opponents have mostly cooperated
-                if (opp1Defects <= n / 2 && opp2Defects <= n / 2)
-                    return 0;
+            this.r = prev_round;
+            this.myLA = myHistory[r];
+            this.opp1LA = oppHistory1[r];
+            this.opp2LA = oppHistory2[r];
 
-                // defect if both opponents have mostly defected
-                if (opp1Defects > n / 2 && opp2Defects > n / 2)
-                    return 1;
+            this.myScore += payoff[myLA][opp1LA][opp2LA];
+            this.opp1Score += payoff[opp1LA][opp2LA][myLA];
+            this.opp2Score += payoff[opp2LA][opp1LA][myLA];
 
-                    // one opponent has mostly cooperated and another has mostly defected
-                else {
-                    // find scores upto the current round
-                    float[] scores = calculateScores(myHistory, oppHistory1, oppHistory2);
-
-                    // if my agent does not have the least score, use simple majority strategy
-                    if (scores[1] < scores[0] || scores[2] < scores[0]) {
-                        return switchToSimpleMajority(n, myHistory, oppHistory1, oppHistory2);
-                    }
-
-                    // if my agent has the least score
-                    else {
-                        float[][] probDists = new float[2][2];
-
-                        // find probability of each action for each opponent
-                        probDists[0] = findProbabilityDist(oppHistory1);
-                        probDists[1] = findProbabilityDist(oppHistory2);
-
-                        // find expected utility for cooperating and defecting
-                        float coopUtil = findExpectedUtility(0, probDists);
-                        float defectUtil = findExpectedUtility(1, probDists);
-
-                        // choose action having higher expected utility
-                        if (coopUtil > defectUtil)
-                            return 0;
-
-                        return 1;
-                    }
-                }
+            if (n>0) {
+                opponent1Coop += oppAction(opp1Hist[r]);
+                opponent2Coop += oppAction(opp2Hist[r]);
             }
+
+//            for (int i = 0; i < n; i++) {
+//                if (oppHistory1[i] == 0)
+//                    opponentCoop1 = opponentCoop1 + 1;
+//                else
+//                    opponentDefect1 = opponentDefect1 + 1;
+//            }
+//            for (int i = 0; i < n; i++) {
+//                if (oppHistory2[i] == 0)
+//                    opponentCoop2 = opponentCoop2 + 1;
+//                else
+//                    opponentDefect2 = opponentDefect2 + 1;
+//            }
+
+            double opponent1Coop_prob = opponent1Coop / opp1Hist.length;
+            double opponent2Coop_prob = opponent2Coop / opp2Hist.length;
+
+            if ((n>100) && (opponent1Coop_prob<0.75 && opponent2Coop_prob<0.75)) {
+                return 1;
+            }
+
+            if (n>1) {
+//                this.myLLA = myHistory[r-1];
+                this.opp1LLA = oppHistory1[r-1];
+                this.opp2LLA = oppHistory2[r-1];
+            }
+
+            if ((opp1LLA==0 || opp2LLA==0) && opp1LA + opp2LA ==0)
+                return 0;
+            else
+                return SoreLoser();
         }
 
-        // simple majority strategy
-        int switchToSimpleMajority(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            int opponentCoop1 = 0, opponentCoop2 = 0;
-            int predAction1, predAction2;
-
-            // find how many times each opponent has cooperated
-            for (int i = 0; i < n; i++) {
-                if (oppHistory1[i] == 0) {
-                    opponentCoop1 += 1;
-                }
-                if (oppHistory2[i] == 0) {
-                    opponentCoop2 += 1;
-                }
+        private boolean iAmLoser() {
+            if (myScore>=opp1Score && myScore>=opp2Score) {
+                return false;
             }
+            return true;
+        }
 
-            // predict action of opponent 1 that it as performed most of the time
-            if (opponentCoop1 > n / 2)
-                predAction1 = 0;
-            else
-                predAction1 = 1;
+        private int SoreLoser() {
+            if (iAmLoser()) return 1;
+            return 0;
+        }
 
-            // predict action of opponent 2 that it as performed most of the time
-            if (opponentCoop2 > n / 2)
-                predAction2 = 0;
-            else
-                predAction2 = 1;
-
-            // choose action that maximizes the payoff for the predicted actions
-            if (payoff[0][predAction1][predAction2] > payoff[1][predAction1][predAction2])
-                return 0;
-
+        private int oppAction(int action) {
+            if (action == 1) return 0;
             return 1;
         }
 
-        // calculate scores of all the players
-        float[] calculateScores(int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            int rounds = myHistory.length;
-            float ScoreA = 0, ScoreB = 0, ScoreC = 0;
-
-            for (int i = 0; i < rounds; i++) {
-                ScoreA = ScoreA + payoff[myHistory[i]][oppHistory1[i]][oppHistory2[i]];
-                ScoreB = ScoreB + payoff[oppHistory1[i]][oppHistory2[i]][myHistory[i]];
-                ScoreC = ScoreC + payoff[oppHistory2[i]][myHistory[i]][oppHistory1[i]];
-            }
-
-            float[] result = { ScoreA / rounds, ScoreB / rounds, ScoreC / rounds };
-            return result;
-        }
-
-        // find probability distribution of the actions for a given opponent
-        float[] findProbabilityDist(int[] history) {
-            float[] probDist = new float[2];
-
-            // count the number of times the opponent in question has cooperated or defected
-            for (int i = 0; i < history.length; i++) {
-                probDist[history[i]]++;
-            }
-
-            // find probability that the opponent in question will cooperate or defect
-            probDist[0] = probDist[0] / history.length;
-            probDist[1] = probDist[1] / history.length;
-
-            return probDist;
-        }
-
-        // find expected utility if the agent performs a certain action
-        float findExpectedUtility(int action, float[][] probDists) {
-            float expectedUtility = 0;
-
-            for (int j = 0; j < 2; j++) {
-                for (int k = 0; k < 2; k++) {
-                    expectedUtility += probDists[0][j] * probDists[1][k] * payoff[action][j][k];
-                }
-            }
-
-            return expectedUtility;
-        }
-    }
-
-    /* From https://github.com/ShreyasMundhra/CZ4046-Assignment2/blob/master/src/Main/ThreePrisonersDilemma.java*/
-    class SimpleMajorityPlayer extends Player {
-        // Predicts opponents' moves based on majority of their past moves
-        // And decides own moves accordingly
-        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            int opponentCoop1 = 0, opponentCoop2 = 0;
-            int predAction1, predAction2;
-
-            for (int i = 0; i < n; i++) {
-                if (oppHistory1[i] == 0) {
-                    opponentCoop1 += 1;
-                }
-                if (oppHistory2[i] == 0) {
-                    opponentCoop2 += 1;
-                }
-            }
-
-            if (opponentCoop1 > n / 2)
-                predAction1 = 0;
+        private int actionWithNoise(int intendedAction, double prob) {
+            if (Math.random() < prob)
+                return intendedAction;  //intended action
             else
-                predAction1 = 1;
+                return oppAction(intendedAction);  //opp of intended action
 
-            if (opponentCoop2 > n / 2)
-                predAction2 = 0;
-            else
-                predAction2 = 1;
-
-            if (payoff[0][predAction1][predAction2] > payoff[1][predAction1][predAction2])
-                return 0;
-
-            return 1;
         }
     }
 
-    /* From https://github.com/ShreyasMundhra/CZ4046-Assignment2/blob/master/src/Main/ThreePrisonersDilemma.java*/
-    class ExpectedUtilityPlayer extends Player {
-        // Finds expected utility for each action
-        // And performs action that maximises expected utility
-        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            float[][] probDists = new float[2][2];
-
-            probDists[0] = findProbabilityDist(oppHistory1);
-            probDists[1] = findProbabilityDist(oppHistory2);
-
-            float coopUtil = findExpectedUtility(0, probDists);
-            float defectUtil = findExpectedUtility(1, probDists);
-
-            if (coopUtil > defectUtil)
-                return 0;
-
-            return 1;
-        }
-
-        float[] findProbabilityDist(int[] history) {
-            float[] probDist = new float[2];
-
-            for (int i = 0; i < history.length; i++) {
-                probDist[history[i]]++;
-            }
-
-            probDist[0] = probDist[0] / history.length;
-            probDist[1] = probDist[1] / history.length;
-
-            return probDist;
-        }
-
-        float findExpectedUtility(int action, float[][] probDists) {
-            float expectedUtility = 0;
-
-            for (int j = 0; j < 2; j++) {
-                for (int k = 0; k < 2; k++) {
-                    expectedUtility += probDists[0][j] * probDists[1][k] * payoff[action][j][k];
-                }
-            }
-
-            return expectedUtility;
-        }
-    }
-
-    /* From https://github.com/ShreyasMundhra/CZ4046-Assignment2/blob/master/src/Main/ThreePrisonersDilemma.java*/
-    class HybridPlayer extends ExpectedUtilityPlayer {
-        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            float[] scores = calculateScores(myHistory, oppHistory1, oppHistory2);
-
-            if (scores[1] < scores[0] || scores[2] < scores[0]) {
-                return switchToSimpleMajority(n, myHistory, oppHistory1, oppHistory2);
-            } else {
-                return super.selectAction(n, myHistory, oppHistory1, oppHistory2);
-            }
-
-        }
-
-        int switchToSimpleMajority(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            int opponentCoop1 = 0, opponentCoop2 = 0;
-            int predAction1, predAction2;
-
-            for (int i = 0; i < n; i++) {
-                if (oppHistory1[i] == 0) {
-                    opponentCoop1 += 1;
-                }
-                if (oppHistory2[i] == 0) {
-                    opponentCoop2 += 1;
-                }
-            }
-
-            if (opponentCoop1 > n / 2)
-                predAction1 = 0;
-            else
-                predAction1 = 1;
-
-            if (opponentCoop2 > n / 2)
-                predAction2 = 0;
-            else
-                predAction2 = 1;
-
-            if (payoff[0][predAction1][predAction2] > payoff[1][predAction1][predAction2])
-                return 0;
-
-            return 1;
-        }
-
-        float[] calculateScores(int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            int rounds = myHistory.length;
-            float ScoreA = 0, ScoreB = 0, ScoreC = 0;
-
-            for (int i = 0; i < rounds; i++) {
-                ScoreA = ScoreA + payoff[myHistory[i]][oppHistory1[i]][oppHistory2[i]];
-                ScoreB = ScoreB + payoff[oppHistory1[i]][oppHistory2[i]][myHistory[i]];
-                ScoreC = ScoreC + payoff[oppHistory2[i]][myHistory[i]][oppHistory1[i]];
-            }
-
-            float[] result = { ScoreA / rounds, ScoreB / rounds, ScoreC / rounds };
-            return result;
-        }
-
-    }
-
-    /* From https://github.com/ShreyasMundhra/CZ4046-Assignment2/blob/master/src/Main/ThreePrisonersDilemma.java*/
-    class DonaldDuck extends HybridPlayer {
-        int opp1Defects = 0;
-        int opp2Defects = 0;
-
-        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            if (n == 0)
-                return 0;
-
-            else {
-                opp1Defects += oppHistory1[n - 1];
-                opp2Defects += oppHistory2[n - 1];
-
-                if (opp1Defects <= n / 2 && opp2Defects <= n / 2)
-                    return 0;
-
-                if (opp1Defects > n / 2 && opp2Defects > n / 2)
-                    return 1;
-
-                else {
-                    return super.selectAction(n, myHistory, oppHistory1, oppHistory2);
-                }
-            }
-        }
-    }
 
     /* In our tournament, each pair of strategies will play one match against each other.
      This procedure simulates a single match and returns the scores. */
-    float[] scoresOfMatch(Player A, Player B, Player C, int rounds) {
+    double[] scoresOfMatch(Player A, Player B, Player C, int rounds) {
         int[] HistoryA = new int[0], HistoryB = new int[0], HistoryC = new int[0];
-        float ScoreA = 0, ScoreB = 0, ScoreC = 0;
+        double ScoreA = 0, ScoreB = 0, ScoreC = 0;
 
         for (int i=0; i<rounds; i++) {
             int PlayA = A.selectAction(i, HistoryA, HistoryB, HistoryC);
@@ -762,7 +579,7 @@ public class ThreePrisonersDilemma {
             HistoryB = extendIntArray(HistoryB, PlayB);
             HistoryC = extendIntArray(HistoryC, PlayC);
         }
-        float[] result = {ScoreA/rounds, ScoreB/rounds, ScoreC/rounds};
+        double[] result = {ScoreA/rounds, ScoreB/rounds, ScoreC/rounds};
         return result;
     }
 
@@ -782,32 +599,25 @@ public class ThreePrisonersDilemma {
 
     Player makePlayer(int which) {
         switch (which) {
-            case 0: return new WILSON_TENG_Player();
-            case 1: return new RandomT4TPlayer();
-            case 2: return new SoftT4TPlayer();
-            case 3: return new HardT4TPlayer();
-
-            case 4: return new Nasty2();
-            case 5: return new Nice2();
-            case 6: return new EncourageCoop1();
-            case 7: return new SoreLoser();
-            case 8: return new EncourageCoop2();
-            case 9: return new Mundhra_Shreyas_Sudhir_Player();
-            case 10: return new SimpleMajorityPlayer();
-            case 11: return new ExpectedUtilityPlayer();
-            case 12: return new HybridPlayer();
-            case 13: return new DonaldDuck();
-            case 14: return new WinStayLoseShift();
-            case 15: return new Trigger();
-
-            case 16: return new TolerantPlayer();
 //            case 0: return new NicePlayer();
 //            case 1: return new NastyPlayer();
-//            case 2: return new FreakyPlayer();
-//            case 3: return new RandomPlayer();
-//            case 4: return new TolerantPlayer();
-//            case 5: return new T4TPlayer();
+//            case 0: return new RandomPlayer();
+            case 0: return new WILSON_TENG_Player();
+            case 1: return new TolerantPlayer();
 
+//            case 3: return new FreakyPlayer();
+            case 2: return new WinStayLoseShift();
+            case 3: return new Trigger();
+
+            case 4: return new RandomT4TPlayer();
+            case 5: return new SoftT4TPlayer();
+            case 6: return new HardT4TPlayer();
+
+            case 7: return new Nasty2();
+            case 8: return new Nice2();
+            case 9: return new EncourageCoop1();
+            case 10: return new SoreLoser();
+            case 11: return new EncourageCoop2();
         }
         throw new RuntimeException("Bad argument passed to makePlayer");
     }
@@ -815,26 +625,28 @@ public class ThreePrisonersDilemma {
     /* Finally, the remaining code actually runs the tournament. */
 
     public static void main (String[] args) {
-        final int TOURNAMENT_ROUNDS = 300;
-        final int NUM_OF_PLAYERS = 17;
-        final boolean PRINT_TOP_3 = false;
-        final boolean VERBOSE = false; // set verbose = false if you get too much text output
+//        ThreePrisonersDilemma_PlayerArena instance = new ThreePrisonersDilemma_PlayerArena();
+//        instance.runTournament();
+        int TOURNAMENT_ROUNDS = 10000;
+        int NUM_PLAYERS = 12;
+        boolean PRINT_TOP_3 = true;
+        boolean VERBOSE = false; // set verbose = false if you get too much text output
         int val;
 
-        ThreePrisonersDilemma instance = new ThreePrisonersDilemma();
+        ThreePrisonersDilemma_PlayerArena instance = new ThreePrisonersDilemma_PlayerArena();
         LinkedHashMap<Integer, Integer> hashMap = new LinkedHashMap<>();
-        for (int player=0; player<NUM_OF_PLAYERS; player++)
+        for (int player = 0; player < NUM_PLAYERS; player++)
             hashMap.put(player, 0);
 
-        for (int i=0; i<TOURNAMENT_ROUNDS; i++) {
-            int[] top_players = instance.runTournament(NUM_OF_PLAYERS, VERBOSE);
-            if (PRINT_TOP_3) for (int tp=0; tp<3; tp++) {
+        for (int i = 0; i < TOURNAMENT_ROUNDS; i++) {
+            int[] top_players = instance.runTournament(NUM_PLAYERS, VERBOSE);
+            if (PRINT_TOP_3) for (int tp = 0; tp < 3; tp++) {
                 System.out.println(top_players[tp]);
             }
-            for (int p=0; p<top_players.length; p++) {
+            for (int p = 0; p < top_players.length; p++) {
                 int tp = top_players[p];
                 val = hashMap.get(tp);
-                hashMap.put(tp, val+p+1);
+                hashMap.put(tp, val + p + 1);
             }
         }
 
@@ -843,7 +655,7 @@ public class ThreePrisonersDilemma {
         float float_tournament_rounds = (float) TOURNAMENT_ROUNDS;
         float float_val;
         LinkedHashMap<Integer, Float> newHashMap = new LinkedHashMap<>();
-        for (int p=0; p<NUM_OF_PLAYERS; p++) {
+        for (int p=0; p<NUM_PLAYERS; p++) {
             val = hashMap.get(p);
             float_val = (float) val;
             newHashMap.put(p, float_val/float_tournament_rounds);
@@ -855,34 +667,28 @@ public class ThreePrisonersDilemma {
         System.out.println(newHashMap);
     }
 
-
     int[] runTournament(int numPlayers, boolean verbose) {
-        float[] totalScore = new float[numPlayers];
+        double[] totalScore = new double[numPlayers];
 
         // This loop plays each triple of players against each other.
         // Note that we include duplicates: two copies of your strategy will play once
         // against each other strategy, and three copies of your strategy will play once.
         int count = 0;
-        for (int i=0; i<numPlayers; i++) {
-            for (int j=i; j<numPlayers; j++) {
-                for (int k=j; k<numPlayers; k++) {
-//                    System.out.println("(i,j,k) is " + i+j+k);
-                    Player A = makePlayer(i); // Create a fresh copy of each player
-                    Player B = makePlayer(j);
-                    Player C = makePlayer(k);
-                    int rounds = 90 + (int)Math.rint(20 * Math.random()); // Between 90 and 110 rounds
-//                    int rounds = 100;
-                    float[] matchResults = scoresOfMatch(A, B, C, rounds); // Run match
-                    totalScore[i] = totalScore[i] + matchResults[0];
-                    totalScore[j] = totalScore[j] + matchResults[1];
-                    totalScore[k] = totalScore[k] + matchResults[2];
-                    count++;
-                    if (verbose)
-                        System.out.println("[" + count + "] " + A.name() + " scored " + matchResults[0] +
-                                " points, " + B.name() + " scored " + matchResults[1] +
-                                " points, and " + C.name() + " scored " + matchResults[2] + " points.");
-                }
-            }
+        for (int i=0; i<numPlayers; i++) for (int j=i; j<numPlayers; j++) for (int k=j; k<numPlayers; k++) {
+
+            Player A = makePlayer(i); // Create a fresh copy of each player
+            Player B = makePlayer(j);
+            Player C = makePlayer(k);
+            int rounds = 90 + (int)Math.rint(20 * Math.random()); // Between 90 and 110 rounds
+            double[] matchResults = scoresOfMatch(A, B, C, rounds); // Run match
+            totalScore[i] = totalScore[i] + matchResults[0];
+            totalScore[j] = totalScore[j] + matchResults[1];
+            totalScore[k] = totalScore[k] + matchResults[2];
+            count++;
+            if (verbose)
+                System.out.println("[" + count + "] " + A.name() + " scored " + matchResults[0] +
+                        " points, " + B.name() + " scored " + matchResults[1] +
+                        " points, and " + C.name() + " scored " + matchResults[2] + " points.");
         }
         int[] sortedOrder = new int[numPlayers];
         // This loop sorts the players by their score.
@@ -906,7 +712,6 @@ public class ThreePrisonersDilemma {
         System.out.println();
         return sortedOrder;
     } // end of runTournament()
-
     public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
         List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
         list.sort(Map.Entry.comparingByValue());
@@ -919,7 +724,4 @@ public class ThreePrisonersDilemma {
 
         return result;
     }
-
 } // end of class PrisonersDilemma
-
-

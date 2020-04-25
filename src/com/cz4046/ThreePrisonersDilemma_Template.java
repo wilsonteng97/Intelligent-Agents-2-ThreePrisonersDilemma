@@ -1,5 +1,10 @@
 package com.cz4046;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 public class ThreePrisonersDilemma_Template {
 
 	/*
@@ -147,6 +152,15 @@ public class ThreePrisonersDilemma_Template {
         }
     }
 
+    class Trigger extends Player {
+        boolean triggered = false;
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            if (n==0) return 0;
+            if (oppHistory1[n-1] + oppHistory2[n-1] == 2) triggered = true;
+            if (triggered) return 1;
+            return 0;
+        }
+    }
 
     /* In our tournament, each pair of strategies will play one match against each other.
      This procedure simulates a single match and returns the scores. */
@@ -183,7 +197,6 @@ public class ThreePrisonersDilemma_Template {
 	 (strategies) in between matches. When you add your own strategy,
 	 you will need to add a new entry to makePlayer, and change numPlayers.*/
 
-    int numPlayers = 7;
     Player makePlayer(int which) {
         switch (which) {
             case 0: return new NicePlayer();
@@ -193,6 +206,8 @@ public class ThreePrisonersDilemma_Template {
             case 4: return new FreakyPlayer();
             case 5: return new T4TPlayer();
             case 6: return new WinStayLoseShift();
+            case 7: return new Trigger();
+//            case 4: return new WILSON_TENG_Player();
         }
         throw new RuntimeException("Bad argument passed to makePlayer");
     }
@@ -200,19 +215,55 @@ public class ThreePrisonersDilemma_Template {
     /* Finally, the remaining code actually runs the tournament. */
 
     public static void main (String[] args) {
+//        ThreePrisonersDilemma_Template instance = new ThreePrisonersDilemma_Template();
+//        instance.runTournament();
+        int TOURNAMENT_ROUNDS = 300;
+        int NUM_PLAYERS = 8;
+        boolean PRINT_TOP_3 = true;
+        boolean VERBOSE = false; // set verbose = false if you get too much text output
+        int val;
+
         ThreePrisonersDilemma_Template instance = new ThreePrisonersDilemma_Template();
-        instance.runTournament();
+        LinkedHashMap<Integer, Integer> hashMap = new LinkedHashMap<>();
+        for (int player = 0; player < NUM_PLAYERS; player++)
+            hashMap.put(player, 0);
+
+        for (int i = 0; i < TOURNAMENT_ROUNDS; i++) {
+            int[] top_players = instance.runTournament(NUM_PLAYERS, VERBOSE);
+            if (PRINT_TOP_3) for (int tp = 0; tp < 3; tp++) {
+                System.out.println(top_players[tp]);
+            }
+            for (int p = 0; p < top_players.length; p++) {
+                int tp = top_players[p];
+                val = hashMap.get(tp);
+                hashMap.put(tp, val + p + 1);
+            }
+        }
+
+        hashMap = (LinkedHashMap<Integer, Integer>) sortByValue(hashMap);
+
+        float float_tournament_rounds = (float) TOURNAMENT_ROUNDS;
+        float float_val;
+        LinkedHashMap<Integer, Float> newHashMap = new LinkedHashMap<>();
+        for (int p=0; p<NUM_PLAYERS; p++) {
+            val = hashMap.get(p);
+            float_val = (float) val;
+            newHashMap.put(p, float_val/float_tournament_rounds);
+        }
+
+        hashMap = (LinkedHashMap<Integer, Integer>) sortByValue(hashMap);
+        newHashMap = (LinkedHashMap<Integer, Float>) sortByValue(newHashMap);
+        System.out.println(hashMap);
+        System.out.println(newHashMap);
     }
 
-    boolean verbose = true; // set verbose = false if you get too much text output
-
-    void runTournament() {
+    int[] runTournament(int numPlayers, boolean verbose) {
         double[] totalScore = new double[numPlayers];
 
         // This loop plays each triple of players against each other.
         // Note that we include duplicates: two copies of your strategy will play once
         // against each other strategy, and three copies of your strategy will play once.
-
+        int count = 0;
         for (int i=0; i<numPlayers; i++) for (int j=i; j<numPlayers; j++) for (int k=j; k<numPlayers; k++) {
 
             Player A = makePlayer(i); // Create a fresh copy of each player
@@ -223,8 +274,9 @@ public class ThreePrisonersDilemma_Template {
             totalScore[i] = totalScore[i] + matchResults[0];
             totalScore[j] = totalScore[j] + matchResults[1];
             totalScore[k] = totalScore[k] + matchResults[2];
+            count++;
             if (verbose)
-                System.out.println(A.name() + " scored " + matchResults[0] +
+                System.out.println("[" + count + "] " + A.name() + " scored " + matchResults[0] +
                         " points, " + B.name() + " scored " + matchResults[1] +
                         " points, and " + C.name() + " scored " + matchResults[2] + " points.");
         }
@@ -244,9 +296,22 @@ public class ThreePrisonersDilemma_Template {
         if (verbose) System.out.println();
         System.out.println("Tournament Results");
         for (int i=0; i<numPlayers; i++)
-            System.out.println(makePlayer(sortedOrder[i]).name() + ": "
+            System.out.println("[" + sortedOrder[i] + "] " + makePlayer(sortedOrder[i]).name() + ": "
                     + totalScore[sortedOrder[i]] + " points.");
 
+        System.out.println();
+        return sortedOrder;
     } // end of runTournament()
+    public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
+        List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
+        list.sort(Map.Entry.comparingByValue());
+//        Collections.reverse(list);
 
+        Map<K, V> result = new LinkedHashMap<>();
+        for (Map.Entry<K, V> entry : list) {
+            result.put(entry.getKey(), entry.getValue());
+        }
+
+        return result;
+    }
 } // end of class PrisonersDilemma
