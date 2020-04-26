@@ -6,13 +6,8 @@ import java.util.LinkedList;
 import java.util.Map;
 
 class WILSON_TENG_Player extends Player {
-    String name = "[██] WILSON_TENG_Player";
-//    // FIXME! >>> REMOVE THIS METHOD BEFORE SUBMISSION.
-//    @Override
-//    String name() {
-//        String result = this.name;
-//        return result.substring(result.indexOf('$')+1);
-//    }
+    final String NAME = "[██] WILSON_THURMAN_TENG";
+    final String MATRIC_NO = "[██] U1820540H";
 
     int[][][] payoff = {
             {{6, 3},     //payoffs when first and second players cooperate
@@ -21,9 +16,7 @@ class WILSON_TENG_Player extends Player {
             {5, 2}}};    //payoffs when first and second players defect
 
     int r;
-    int prev_round = 0;
     int[] myHist, opp1Hist, opp2Hist;
-    int myLA, opp1LA, opp2LA;
     int myScore=0, opp1Score=0, opp2Score=0;
     int opponent1Coop = 0; int opponent2Coop = 0;
 
@@ -31,7 +24,7 @@ class WILSON_TENG_Player extends Player {
     final double STRICT_THRESHOLD = 0.750; // Used for Law [#2]
 
     int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-        /*
+        /**
         LAWS:
         [#0] Unless I am losing, be trustworthy and unpredictable at the same time.
         [#1] Protect myself.
@@ -43,16 +36,15 @@ class WILSON_TENG_Player extends Player {
         if (n==0) return 0;
 
         // Updating class variables for use in methods.
-        this.prev_round = n - 1;
+        this.r = n - 1; // previous round index
         this.myHist = myHistory;
         this.opp1Hist = oppHistory1;
         this.opp2Hist = oppHistory2;
 
         // Updating Last Actions (LA) for all players.
-        this.r = prev_round;
-        this.myLA = myHistory[r];
-        this.opp1LA = oppHistory1[r];
-        this.opp2LA = oppHistory2[r];
+        int myLA = myHistory[r];
+        int opp1LA = oppHistory1[r];
+        int opp2LA = oppHistory2[r];
 
         // Updating Scores for all players
         this.myScore += payoff[myLA][opp1LA][opp2LA];
@@ -64,7 +56,6 @@ class WILSON_TENG_Player extends Player {
             opponent1Coop += oppAction(opp1Hist[r]);
             opponent2Coop += oppAction(opp2Hist[r]);
         }
-
         // Calculate opponent's cooperate probability.
         double opponent1Coop_prob = opponent1Coop / opp1Hist.length;
         double opponent2Coop_prob = opponent2Coop / opp2Hist.length;

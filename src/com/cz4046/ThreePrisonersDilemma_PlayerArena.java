@@ -609,13 +609,12 @@ public class ThreePrisonersDilemma_PlayerArena {
     }
 
     /* Finally, the remaining code actually runs the tournament. */
-
     public static void main (String[] args) {
 //        ThreePrisonersDilemma_PlayerArena instance = new ThreePrisonersDilemma_PlayerArena();
 //        instance.runTournament();
-        int TOURNAMENT_ROUNDS = 1000;
+        int TOURNAMENT_ROUNDS = 10000;
         int NUM_PLAYERS = 12;
-        boolean PRINT_TOP_3 = true;
+        boolean PRINT_TOP_3 = false;
         boolean VERBOSE = false; // set verbose = false if you get too much text output
         int val;
 
@@ -649,8 +648,10 @@ public class ThreePrisonersDilemma_PlayerArena {
 
         hashMap = (LinkedHashMap<Integer, Integer>) sortByValue(hashMap);
         newHashMap = (LinkedHashMap<Integer, Float>) sortByValue(newHashMap);
-        System.out.println(hashMap);
-        System.out.println(newHashMap);
+        System.out.print("[" + TOURNAMENT_ROUNDS + " TOURNAMENT_ROUNDS]");
+        System.out.println(" >>> Player 0 is WILSON_TENG_Player <<<");
+        System.out.println("Summed up rankings for Players 0 to " + NUM_PLAYERS + " : " + hashMap);
+        System.out.println("Average rankings : \t\t\t\t\t\t " + newHashMap);
     }
 
     int[] runTournament(int numPlayers, boolean verbose) {

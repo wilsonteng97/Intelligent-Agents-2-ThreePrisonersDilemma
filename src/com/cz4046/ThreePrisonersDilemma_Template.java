@@ -182,7 +182,8 @@ public class ThreePrisonersDilemma_Template {
     }
 
     class WILSON_TENG_Player extends Player {
-        String name = "[██] WILSON_TENG_Player";
+        final String NAME = "[██] WILSON_THURMAN_TENG";
+        final String MATRIC_NO = "[██] U1820540H";
 
         int[][][] payoff = {
                 {{6, 3},     //payoffs when first and second players cooperate
@@ -191,27 +192,35 @@ public class ThreePrisonersDilemma_Template {
                         {5, 2}}};    //payoffs when first and second players defect
 
         int r;
-        int this_round; int prev_round = 0;
         int[] myHist, opp1Hist, opp2Hist;
-        int myLA, opp1LA, opp2LA;
-        int opp1LLA, opp2LLA;
         int myScore=0, opp1Score=0, opp2Score=0;
         int opponent1Coop = 0; int opponent2Coop = 0;
 
+        final double LENIENT_THRESHOLD = 0.705; // Used for Law [#1]
+        final double STRICT_THRESHOLD = 0.750; // Used for Law [#2]
+
         int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            if (n==0) return 0; // Always cooperate in first round!
+            /**
+             LAWS:
+             [#0] Unless I am losing, be trustworthy and unpredictable at the same time.
+             [#1] Protect myself.
+             [#2] Cooperate in a cooperative environment.
+             [#3] If I am losing, turn it into a lose-lose situation.
+             */
+
+            // Assume environment is cooperative. Always cooperate in first round!
+            if (n==0) return 0;
 
             // Updating class variables for use in methods.
-            this.prev_round = n - 1;
+            this.r = n - 1; // previous round index
             this.myHist = myHistory;
             this.opp1Hist = oppHistory1;
             this.opp2Hist = oppHistory2;
 
             // Updating Last Actions (LA) for all players.
-            this.r = prev_round;
-            this.myLA = myHistory[r];
-            this.opp1LA = oppHistory1[r];
-            this.opp2LA = oppHistory2[r];
+            int myLA = myHistory[r];
+            int opp1LA = oppHistory1[r];
+            int opp2LA = oppHistory2[r];
 
             // Updating Scores for all players
             this.myScore += payoff[myLA][opp1LA][opp2LA];
@@ -223,37 +232,42 @@ public class ThreePrisonersDilemma_Template {
                 opponent1Coop += oppAction(opp1Hist[r]);
                 opponent2Coop += oppAction(opp2Hist[r]);
             }
-
+            // Calculate opponent's cooperate probability.
             double opponent1Coop_prob = opponent1Coop / opp1Hist.length;
             double opponent2Coop_prob = opponent2Coop / opp2Hist.length;
 
-            if ((n>100) && (opponent1Coop_prob<0.750 && opponent2Coop_prob<0.750)) {
-                return 1;
+            /** [PROTECT MYSELF]: -> Law [#1]
+             When it is nearing the end of the tournament at 100 rounds, if both players are known to be relatively nasty
+             (cooperate less than 75% of the time). Defect to protect myself.
+             */
+            if ((n>100) && (opponent1Coop_prob<STRICT_THRESHOLD && opponent2Coop_prob<STRICT_THRESHOLD)) {
+                // Law [#0] Added
+                return actionWithNoise(1, 99);
             }
 
-            if ((opp1LA+opp2LA ==0)&&(opponent1Coop_prob>0.705 && opponent2Coop_prob>0.705)) {
+            /** [REWARD COOPERATION]: -> Law [#2]
+             At any point in time before we are able to accurately decide if opponents are nasty or not. We set a lenient
+             threshold (0.705) to gauge if opponents are cooperative. Additionally, we check if both opponent's last action
+             was to cooperate. If yes, we will cooperate too.
+             */
+            if ((opp1LA+opp2LA ==0)&&(opponent1Coop_prob>LENIENT_THRESHOLD && opponent2Coop_prob>LENIENT_THRESHOLD)) {
+                // Law [#0] Added
                 return actionWithNoise(0, 99);
             }
             else
+            /** [I WILL NOT LOSE] -> Law [#3]
+             However, if opponent is not cooperative, we will check if we have the highest score.
+             If we have the highest score, we are appeased and will cooperate. Else, we will defect.
+             */
                 return SoreLoser();
         }
 
-        private boolean iAmLoser() {
-            if (myScore>=opp1Score && myScore>=opp2Score) {
-                return false;
-            }
-            return true;
-        }
-
-        private int SoreLoser() {
-            if (iAmLoser()) return 1;
-            return 0;
-        }
-
-        private int oppAction(int action) {
-            if (action == 1) return 0;
-            return 1;
-        }
+        /**
+         * Law [#0]: This utility method introduces noise to an agent's action, allowing it to be unpredictable.
+         * @param intendedAction The agent's intended action.
+         * @param percent_chance_for_intended_action The percentage chance the agent will perform it's intended action.
+         * @return The agent's final action.
+         */
         private int actionWithNoise(int intendedAction, int percent_chance_for_intended_action) {
             Map<Integer, Integer> map = new HashMap<Integer, Integer>() {{
                 put(intendedAction, percent_chance_for_intended_action);
@@ -267,6 +281,28 @@ public class ThreePrisonersDilemma_Template {
             }
             Collections.shuffle(list);
             return list.pop();
+        }
+
+        /** Law [#3]:
+         * Cooperates if agent currently has the highest score, else defect.
+         * @return
+         */
+        private int SoreLoser() {
+            if (iAmWinner()) return 0;
+            return 1;
+        }
+
+        /* Function to check if agent is loser or not. Agent is a winner if it has the highest score. */
+        private boolean iAmWinner() {
+            if (myScore>=opp1Score && myScore>=opp2Score) {
+                return true;
+            }
+            return false;
+        }
+        /* Utility method to obtain opposite action. */
+        private int oppAction(int action) {
+            if (action == 1) return 0;
+            return 1;
         }
     }
 
@@ -307,29 +343,28 @@ public class ThreePrisonersDilemma_Template {
 
     Player makePlayer(int which) {
         switch (which) {
-            case 0: return new NicePlayer();
-            case 1: return new NastyPlayer();
-            case 2: return new RandomPlayer();
-            case 3: return new TolerantPlayer();
-            case 4: return new FreakyPlayer();
-            case 5: return new T4TPlayer();
-            case 6: return new WinStayLoseShift();
-            case 7: return new Trigger();
-            case 8: return new AlternatePlayer0();
+            case 0: return new WILSON_TENG_Player();
+            case 1: return new NicePlayer();
+            case 2: return new NastyPlayer();
+            case 3: return new RandomPlayer();
+            case 4: return new TolerantPlayer();
+            case 5: return new FreakyPlayer();
+            case 6: return new T4TPlayer();
+            // Added Strategies
+            case 7: return new WinStayLoseShift();
+            case 8: return new Trigger();
+            case 9: return new AlternatePlayer0();
 //            case 9: return new AlternatePlayer1();
-            case 9: return new WILSON_TENG_Player();
+
         }
         throw new RuntimeException("Bad argument passed to makePlayer");
     }
 
     /* Finally, the remaining code actually runs the tournament. */
-
     public static void main (String[] args) {
-//        ThreePrisonersDilemma_Template instance = new ThreePrisonersDilemma_Template();
-//        instance.runTournament();
-        int TOURNAMENT_ROUNDS = 300;
+        int TOURNAMENT_ROUNDS = 10000;
         int NUM_PLAYERS = 10;
-        boolean PRINT_TOP_3 = true;
+        boolean PRINT_TOP_3 = false;
         boolean VERBOSE = false; // set verbose = false if you get too much text output
         int val;
 
@@ -363,8 +398,10 @@ public class ThreePrisonersDilemma_Template {
 
         hashMap = (LinkedHashMap<Integer, Integer>) sortByValue(hashMap);
         newHashMap = (LinkedHashMap<Integer, Float>) sortByValue(newHashMap);
-        System.out.println(hashMap);
-        System.out.println(newHashMap);
+        System.out.print("[" + TOURNAMENT_ROUNDS + " TOURNAMENT_ROUNDS]");
+        System.out.println(" >>> Player 0 is WILSON_TENG_Player <<<");
+        System.out.println("Summed up rankings for Players 0 to " + NUM_PLAYERS + " : " + hashMap);
+        System.out.println("Average rankings : \t\t\t\t\t\t " + newHashMap);
     }
 
     int[] runTournament(int numPlayers, boolean verbose) {
@@ -406,7 +443,7 @@ public class ThreePrisonersDilemma_Template {
         if (verbose) System.out.println();
         System.out.println("Tournament Results");
         for (int i=0; i<numPlayers; i++)
-            System.out.println("[" + sortedOrder[i] + "] " + makePlayer(sortedOrder[i]).name() + ": "
+            System.out.println("[Player " + sortedOrder[i] + "] " + makePlayer(sortedOrder[i]).name() + ": "
                     + totalScore[sortedOrder[i]] + " points.");
 
         System.out.println();
