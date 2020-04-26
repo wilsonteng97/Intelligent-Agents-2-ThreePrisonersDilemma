@@ -130,16 +130,14 @@ public class ThreePrisonersDilemma_Template {
         }
     }
 
+    /* Return same action if prev_round score was >=6. Else, return opp action. */
     class WinStayLoseShift extends Player {
         int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
             if (n==0) return 0;
-
             int r = n - 1;
-            int myLA = myHistory[r];
-            int oppLA1 = oppHistory1[r];
-            int oppLA2 = oppHistory2[r];
+            int myLA = myHistory[r]; int oppLA1 = oppHistory1[r]; int oppLA2 = oppHistory2[r];
 
-            if (payoff[myLA][oppLA1][oppLA2]>=5) return myLA;
+            if (payoff[myLA][oppLA1][oppLA2]>=6) return myLA;
             return oppAction(myLA);
         }
 
@@ -148,7 +146,7 @@ public class ThreePrisonersDilemma_Template {
             return 1;
         }
     }
-
+    /* If both opponents defected in the last round, defect for subsequent rounds regardless. */
     class Trigger extends Player {
         boolean triggered = false;
         int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
@@ -158,7 +156,7 @@ public class ThreePrisonersDilemma_Template {
             return 0;
         }
     }
-
+    /* Start with 0. Return the opposite of the previous action for subsequent rounds. */
     class AlternatePlayer0 extends Player {
         int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
             if (n==0) return 0;
