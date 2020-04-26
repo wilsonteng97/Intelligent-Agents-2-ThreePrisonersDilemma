@@ -1,9 +1,6 @@
 package com.cz4046;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ThreePrisonersDilemma_Template {
 
@@ -162,6 +159,117 @@ public class ThreePrisonersDilemma_Template {
         }
     }
 
+    class AlternatePlayer0 extends Player {
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            if (n==0) return 0;
+            return oppAction(myHistory[n-1]);
+        }
+        private int oppAction(int action) {
+            if (action == 1) return 0;
+            return 1;
+        }
+    }
+
+    class AlternatePlayer1 extends Player {
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            if (n==0) return 1;
+            return oppAction(myHistory[n-1]);
+        }
+        private int oppAction(int action) {
+            if (action == 1) return 0;
+            return 1;
+        }
+    }
+
+    class WILSON_TENG_Player extends Player {
+        String name = "[██] WILSON_TENG_Player";
+
+        int[][][] payoff = {
+                {{6, 3},     //payoffs when first and second players cooperate
+                        {3, 0}},     //payoffs when first player coops, second defects
+                {{8, 5},     //payoffs when first player defects, second coops
+                        {5, 2}}};    //payoffs when first and second players defect
+
+        int r;
+        int this_round; int prev_round = 0;
+        int[] myHist, opp1Hist, opp2Hist;
+        int myLA, opp1LA, opp2LA;
+        int opp1LLA, opp2LLA;
+        int myScore=0, opp1Score=0, opp2Score=0;
+        int opponent1Coop = 0; int opponent2Coop = 0;
+
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            if (n==0) return 0; // Always cooperate in first round!
+
+            // Updating class variables for use in methods.
+            this.prev_round = n - 1;
+            this.myHist = myHistory;
+            this.opp1Hist = oppHistory1;
+            this.opp2Hist = oppHistory2;
+
+            // Updating Last Actions (LA) for all players.
+            this.r = prev_round;
+            this.myLA = myHistory[r];
+            this.opp1LA = oppHistory1[r];
+            this.opp2LA = oppHistory2[r];
+
+            // Updating Scores for all players
+            this.myScore += payoff[myLA][opp1LA][opp2LA];
+            this.opp1Score += payoff[opp1LA][opp2LA][myLA];
+            this.opp2Score += payoff[opp2LA][opp1LA][myLA];
+
+            // Update opponent's cooperate record.
+            if (n>0) {
+                opponent1Coop += oppAction(opp1Hist[r]);
+                opponent2Coop += oppAction(opp2Hist[r]);
+            }
+
+            double opponent1Coop_prob = opponent1Coop / opp1Hist.length;
+            double opponent2Coop_prob = opponent2Coop / opp2Hist.length;
+
+            if ((n>100) && (opponent1Coop_prob<0.750 && opponent2Coop_prob<0.750)) {
+                return 1;
+            }
+
+            if ((opp1LA+opp2LA ==0)&&(opponent1Coop_prob>0.705 && opponent2Coop_prob>0.705)) {
+                return actionWithNoise(0, 99);
+            }
+            else
+                return SoreLoser();
+        }
+
+        private boolean iAmLoser() {
+            if (myScore>=opp1Score && myScore>=opp2Score) {
+                return false;
+            }
+            return true;
+        }
+
+        private int SoreLoser() {
+            if (iAmLoser()) return 1;
+            return 0;
+        }
+
+        private int oppAction(int action) {
+            if (action == 1) return 0;
+            return 1;
+        }
+        private int actionWithNoise(int intendedAction, int percent_chance_for_intended_action) {
+            Map<Integer, Integer> map = new HashMap<Integer, Integer>() {{
+                put(intendedAction, percent_chance_for_intended_action);
+                put(oppAction(intendedAction), 1-percent_chance_for_intended_action);
+            }};
+            LinkedList<Integer> list = new LinkedList<>();
+            for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+                for (int i = 0; i < entry.getValue(); i++) {
+                    list.add(entry.getKey());
+                }
+            }
+            Collections.shuffle(list);
+            return list.pop();
+        }
+    }
+
     /* In our tournament, each pair of strategies will play one match against each other.
      This procedure simulates a single match and returns the scores. */
     double[] scoresOfMatch(Player A, Player B, Player C, int rounds) {
@@ -207,7 +315,9 @@ public class ThreePrisonersDilemma_Template {
             case 5: return new T4TPlayer();
             case 6: return new WinStayLoseShift();
             case 7: return new Trigger();
-//            case 4: return new WILSON_TENG_Player();
+            case 8: return new AlternatePlayer0();
+//            case 9: return new AlternatePlayer1();
+            case 9: return new WILSON_TENG_Player();
         }
         throw new RuntimeException("Bad argument passed to makePlayer");
     }
@@ -218,7 +328,7 @@ public class ThreePrisonersDilemma_Template {
 //        ThreePrisonersDilemma_Template instance = new ThreePrisonersDilemma_Template();
 //        instance.runTournament();
         int TOURNAMENT_ROUNDS = 300;
-        int NUM_PLAYERS = 8;
+        int NUM_PLAYERS = 10;
         boolean PRINT_TOP_3 = true;
         boolean VERBOSE = false; // set verbose = false if you get too much text output
         int val;

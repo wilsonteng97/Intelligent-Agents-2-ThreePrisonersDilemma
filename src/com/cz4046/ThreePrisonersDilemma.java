@@ -171,6 +171,28 @@ public class ThreePrisonersDilemma {
         }
     }
 
+    class AlternatePlayer0 extends Player {
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            if (n==0) return 0;
+            return oppAction(myHistory[n-1]);
+        }
+        private int oppAction(int action) {
+            if (action == 1) return 0;
+            return 1;
+        }
+    }
+
+    class AlternatePlayer1 extends Player {
+        int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
+            if (n==0) return 1;
+            return oppAction(myHistory[n-1]);
+        }
+        private int oppAction(int action) {
+            if (action == 1) return 0;
+            return 1;
+        }
+    }
+
     /* Other Strategies */
     /* From https://github.com/almightyGOSU/CZ4046-Intelligent-Agents-Assignment-2/blob/master/src/ThreePrisonersDilemma.java*/
     class SoreLoser extends Player {
@@ -801,6 +823,8 @@ public class ThreePrisonersDilemma {
             case 15: return new Trigger();
 
             case 16: return new TolerantPlayer();
+            case 17: return new AlternatePlayer0();
+//            case 18: return new AlternatePlayer1();
 //            case 0: return new NicePlayer();
 //            case 1: return new NastyPlayer();
 //            case 2: return new FreakyPlayer();
@@ -815,8 +839,8 @@ public class ThreePrisonersDilemma {
     /* Finally, the remaining code actually runs the tournament. */
 
     public static void main (String[] args) {
-        final int TOURNAMENT_ROUNDS = 300;
-        final int NUM_OF_PLAYERS = 17;
+        final int TOURNAMENT_ROUNDS = 1000;
+        final int NUM_OF_PLAYERS = 18;
         final boolean PRINT_TOP_3 = false;
         final boolean VERBOSE = false; // set verbose = false if you get too much text output
         int val;

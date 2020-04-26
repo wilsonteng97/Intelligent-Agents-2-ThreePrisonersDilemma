@@ -1,9 +1,6 @@
 package com.cz4046;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ThreePrisonersDilemma_PlayerArena {
 	/*
@@ -466,71 +463,54 @@ public class ThreePrisonersDilemma_PlayerArena {
 
         int[][][] payoff = {
                 {{6, 3},     //payoffs when first and second players cooperate
-                        {3, 0}},     //payoffs when first player coops, second defects
+                {3, 0}},     //payoffs when first player coops, second defects
                 {{8, 5},     //payoffs when first player defects, second coops
-                        {5, 2}}};    //payoffs when first and second players defect
+                {5, 2}}};    //payoffs when first and second players defect
 
         int r;
-        int prev_round = 0;
-        int this_round;
+        int this_round; int prev_round = 0;
         int[] myHist, opp1Hist, opp2Hist;
         int myLA, opp1LA, opp2LA;
-        int myLLA, opp1LLA, opp2LLA;
-
+        int opp1LLA, opp2LLA;
         int myScore=0, opp1Score=0, opp2Score=0;
         int opponent1Coop = 0; int opponent2Coop = 0;
 
         int selectAction(int n, int[] myHistory, int[] oppHistory1, int[] oppHistory2) {
-            if (n==0) return 0;
+            if (n==0) return 0; // Always cooperate in first round!
 
-            this.this_round = n;
+            // Updating class variables for use in methods.
             this.prev_round = n - 1;
             this.myHist = myHistory;
             this.opp1Hist = oppHistory1;
             this.opp2Hist = oppHistory2;
 
+            // Updating Last Actions (LA) for all players.
             this.r = prev_round;
             this.myLA = myHistory[r];
             this.opp1LA = oppHistory1[r];
             this.opp2LA = oppHistory2[r];
 
+            // Updating Scores for all players
             this.myScore += payoff[myLA][opp1LA][opp2LA];
             this.opp1Score += payoff[opp1LA][opp2LA][myLA];
             this.opp2Score += payoff[opp2LA][opp1LA][myLA];
 
+            // Update opponent's cooperate record.
             if (n>0) {
                 opponent1Coop += oppAction(opp1Hist[r]);
                 opponent2Coop += oppAction(opp2Hist[r]);
             }
 
-//            for (int i = 0; i < n; i++) {
-//                if (oppHistory1[i] == 0)
-//                    opponentCoop1 = opponentCoop1 + 1;
-//                else
-//                    opponentDefect1 = opponentDefect1 + 1;
-//            }
-//            for (int i = 0; i < n; i++) {
-//                if (oppHistory2[i] == 0)
-//                    opponentCoop2 = opponentCoop2 + 1;
-//                else
-//                    opponentDefect2 = opponentDefect2 + 1;
-//            }
-
             double opponent1Coop_prob = opponent1Coop / opp1Hist.length;
             double opponent2Coop_prob = opponent2Coop / opp2Hist.length;
 
-            if ((n>100) && (opponent1Coop_prob<0.75 && opponent2Coop_prob<0.75)) {
-                return 1;
+            if ((n>100) && (opponent1Coop_prob<0.750 && opponent2Coop_prob<0.750)) {
+                return actionWithNoise(1, 99);
             }
 
-            if (n>1) {
-//                this.myLLA = myHistory[r-1];
-                this.opp1LLA = oppHistory1[r-1];
-                this.opp2LLA = oppHistory2[r-1];
+            if ((opp1LA+opp2LA ==0)&&(opponent1Coop_prob>0.705 && opponent2Coop_prob>0.705)) {
+                return actionWithNoise(0, 99);
             }
-
-            if ((opp1LLA==0 || opp2LLA==0) && opp1LA + opp2LA ==0)
-                return 0;
             else
                 return SoreLoser();
         }
@@ -551,13 +531,19 @@ public class ThreePrisonersDilemma_PlayerArena {
             if (action == 1) return 0;
             return 1;
         }
-
-        private int actionWithNoise(int intendedAction, double prob) {
-            if (Math.random() < prob)
-                return intendedAction;  //intended action
-            else
-                return oppAction(intendedAction);  //opp of intended action
-
+        private int actionWithNoise(int intendedAction, int percent_chance_for_intended_action) {
+            Map<Integer, Integer> map = new HashMap<Integer, Integer>() {{
+                put(intendedAction, percent_chance_for_intended_action);
+                put(oppAction(intendedAction), 1-percent_chance_for_intended_action);
+            }};
+            LinkedList<Integer> list = new LinkedList<>();
+            for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+                for (int i = 0; i < entry.getValue(); i++) {
+                    list.add(entry.getKey());
+                }
+            }
+            Collections.shuffle(list);
+            return list.pop();
         }
     }
 
@@ -627,7 +613,7 @@ public class ThreePrisonersDilemma_PlayerArena {
     public static void main (String[] args) {
 //        ThreePrisonersDilemma_PlayerArena instance = new ThreePrisonersDilemma_PlayerArena();
 //        instance.runTournament();
-        int TOURNAMENT_ROUNDS = 10000;
+        int TOURNAMENT_ROUNDS = 1000;
         int NUM_PLAYERS = 12;
         boolean PRINT_TOP_3 = true;
         boolean VERBOSE = false; // set verbose = false if you get too much text output
