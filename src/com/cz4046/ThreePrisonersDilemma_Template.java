@@ -360,19 +360,17 @@ public class ThreePrisonersDilemma_Template {
         throw new RuntimeException("Bad argument passed to makePlayer");
     }
 
-    /* Finally, the remaining code actually runs the tournament. */
+    /* Modified main to run tournament rounds */
     public static void main (String[] args) {
-        int TOURNAMENT_ROUNDS = 10000;
-        int NUM_PLAYERS = 10;
+        int TOURNAMENT_ROUNDS = 10000; int NUM_PLAYERS = 10;
         boolean PRINT_TOP_3 = false;
         boolean VERBOSE = false; // set verbose = false if you get too much text output
         int val;
 
         ThreePrisonersDilemma_Template instance = new ThreePrisonersDilemma_Template();
-        LinkedHashMap<Integer, Integer> hashMap = new LinkedHashMap<>();
+        LinkedHashMap<Integer, Integer> hashMap = new LinkedHashMap<>(); // To store player's cumulative rankings.
         for (int player = 0; player < NUM_PLAYERS; player++)
-            hashMap.put(player, 0);
-
+            hashMap.put(player, 0); // initialize player's cumulative ranking to 0.
         for (int i = 0; i < TOURNAMENT_ROUNDS; i++) {
             int[] top_players = instance.runTournament(NUM_PLAYERS, VERBOSE);
             if (PRINT_TOP_3) for (int tp = 0; tp < 3; tp++) {
@@ -384,20 +382,20 @@ public class ThreePrisonersDilemma_Template {
                 hashMap.put(tp, val + p + 1);
             }
         }
-
+        // Sort players by cumulative ranking
         hashMap = (LinkedHashMap<Integer, Integer>) sortByValue(hashMap);
-
         float float_tournament_rounds = (float) TOURNAMENT_ROUNDS;
         float float_val;
         LinkedHashMap<Integer, Float> newHashMap = new LinkedHashMap<>();
+        // Get average ranking
         for (int p=0; p<NUM_PLAYERS; p++) {
             val = hashMap.get(p);
             float_val = (float) val;
             newHashMap.put(p, float_val/float_tournament_rounds);
         }
-
         hashMap = (LinkedHashMap<Integer, Integer>) sortByValue(hashMap);
         newHashMap = (LinkedHashMap<Integer, Float>) sortByValue(newHashMap);
+
         System.out.print("[" + TOURNAMENT_ROUNDS + " TOURNAMENT_ROUNDS]");
         System.out.println(" >>> Player 0 is WILSON_TENG_Player <<<");
         System.out.println("Summed up rankings for Players 0 to " + NUM_PLAYERS + " : " + hashMap);
@@ -406,13 +404,11 @@ public class ThreePrisonersDilemma_Template {
 
     int[] runTournament(int numPlayers, boolean verbose) {
         double[] totalScore = new double[numPlayers];
-
         // This loop plays each triple of players against each other.
         // Note that we include duplicates: two copies of your strategy will play once
         // against each other strategy, and three copies of your strategy will play once.
         int count = 0;
         for (int i=0; i<numPlayers; i++) for (int j=i; j<numPlayers; j++) for (int k=j; k<numPlayers; k++) {
-
             Player A = makePlayer(i); // Create a fresh copy of each player
             Player B = makePlayer(j);
             Player C = makePlayer(k);

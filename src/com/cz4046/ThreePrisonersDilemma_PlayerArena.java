@@ -610,8 +610,6 @@ public class ThreePrisonersDilemma_PlayerArena {
 
     /* Finally, the remaining code actually runs the tournament. */
     public static void main (String[] args) {
-//        ThreePrisonersDilemma_PlayerArena instance = new ThreePrisonersDilemma_PlayerArena();
-//        instance.runTournament();
         int TOURNAMENT_ROUNDS = 10000;
         int NUM_PLAYERS = 12;
         boolean PRINT_TOP_3 = false;
